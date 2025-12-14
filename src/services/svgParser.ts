@@ -1,5 +1,5 @@
 import { parseStringPromise } from "xml2js";
-import { IRectangle, IssueType } from "../models/Design";
+import { IRectangle, IssueType, IIssue } from "../models/Design";
 
 // xml2js returns unknown; cast to a loose record for our use-case.
 const parseXML = (xml: string) =>
@@ -122,23 +122,33 @@ export class SvgParserService {
     rectangles: IRectangle[],
     svgWidth: number,
     svgHeight: number
-  ): IssueType[] {
-    const issues: IssueType[] = [];
+  ): IIssue[] {
+    const issues: IIssue[] = [];
 
     // Check for EMPTY issue
     if (rectangles.length === 0) {
-      issues.push("EMPTY");
+      issues.push({
+        type: "EMPTY",
+        message: "No rectangle elements were found in the SVG.",
+        rectangleId: null,
+      });
       return issues; // Return early if empty
     }
 
-    // Check for OUT_OF_BOUNDS issue
-    const hasOutOfBounds = rectangles.some((rect) => {
-      return rect.x + rect.width > svgWidth || rect.y + rect.height > svgHeight;
-    });
+    // Check for OUT_OF_BOUNDS issue per rectangle
+    rectangles.forEach((rect, index) => {
+      const isOutOfBounds =
+        rect.x + rect.width > svgWidth || rect.y + rect.height > svgHeight;
 
-    if (hasOutOfBounds) {
-      issues.push("OUT_OF_BOUNDS");
-    }
+      if (isOutOfBounds) {
+        issues.push({
+          type: "OUT_OF_BOUNDS",
+          message:
+            "Rectangle extends beyond SVG boundaries (x + width or y + height exceeds canvas).",
+          rectangleId: `${index}`,
+        });
+      }
+    });
 
     return issues;
   }

@@ -10,6 +10,12 @@ export interface IRectangle {
 
 export type IssueType = 'EMPTY' | 'OUT_OF_BOUNDS';
 
+export interface IIssue {
+  type: IssueType;
+  message: string;
+  rectangleId?: string | null;
+}
+
 export interface IDesign extends Document {
   filename: string;
   status: 'PENDING' | 'PROCESSED';
@@ -19,7 +25,7 @@ export interface IDesign extends Document {
   items: IRectangle[];
   itemsCount: number;
   coverageRatio: number;
-  issues: IssueType[];
+  issues: IIssue[];
 }
 
 const RectangleSchema = new Schema<IRectangle>({
@@ -44,7 +50,16 @@ const DesignSchema = new Schema<IDesign>({
   items: [RectangleSchema],
   itemsCount: { type: Number, default: 0 },
   coverageRatio: { type: Number, default: 0 },
-  issues: [{ type: String, enum: ['EMPTY', 'OUT_OF_BOUNDS'] }],
+  issues: [
+    new Schema<IIssue>(
+      {
+        type: { type: String, enum: ['EMPTY', 'OUT_OF_BOUNDS'], required: true },
+        message: { type: String, required: true },
+        rectangleId: { type: String, required: false },
+      },
+      { _id: false }
+    ),
+  ],
 });
 
 export const Design = mongoose.model<IDesign>('Design', DesignSchema);
